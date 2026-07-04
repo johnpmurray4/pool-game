@@ -32,7 +32,14 @@ multiplayer roughly doubles the project.
 
 ## 2. Tech stack
 
-**Recommendation: Godot 4 (GDScript/C#) with a custom billiards physics layer.**
+**Recommendation: Godot 4 (.NET build) with the core simulation written in C#.**
+
+The language choice for the core sim is load-bearing: the AI evaluates candidate shots
+by running hundreds of headless simulations per decision, on a phone. GDScript is an
+order of magnitude too slow for that. C# (with preallocated structs in the hot loop) is
+fast enough, keeps us inside Godot's tooling, and has mature test frameworks; Rust/C++
+via GDExtension is the escape hatch if profiling ever demands it. GDScript stays fine
+for UI/menu glue.
 
 | Option | Pros | Cons |
 |---|---|---|
@@ -128,6 +135,11 @@ cushion response) live in a data file, not code, so tuning doesn't require rebui
 
 ## 5. Rules engine (WPA Blackball)
 
+**Source of truth: the official WPA Blackball Rules (latest published revision at
+wpapool.com).** Foul handling differs between WPA Blackball and EPA World Rules
+(free shot vs two-visit carry), so every rule below gets verified against the rulebook
+during this phase rather than implemented from memory.
+
 State machine covering:
 - Break rules (what constitutes a fair break, potting on the break, open table)
 - Group assignment (reds/yellows decided by first legal pot after the break)
@@ -155,6 +167,11 @@ Simulation-based (no ML needed):
 4. Difficulty = execution noise + search depth: easy AI adds aim/power error and only
    looks 1 shot ahead; hard AI has low noise and evaluates position play.
 
+**Runtime constraints:** the AI runs on a background thread with a hard time budget
+(~1–2s per decision, playing the best shot found so far when time expires). This keeps
+the UI responsive and makes difficulty scale gracefully on slow devices instead of
+freezing them.
+
 This is only feasible because the physics core is deterministic and headless — one more
 payoff of the architecture in §3.
 
@@ -181,9 +198,9 @@ payoff of the architecture in §3.
 
 | Phase | Deliverable | Est. |
 |---|---|---|
-| **0. Skeleton** | Godot project, Android export pipeline working on a real device, CI building APKs | 1 wk |
+| **0. Skeleton** | Godot .NET project, Android export pipeline working on a real device, CI building APKs, **on-device sim benchmark scene** (canned break shot × N) so the physics/AI perf budget is measured in week one | 1 wk |
 | **1. Physics core** | Headless sim: ball motion, collisions, cushions, pockets, spin; unit tests + a desktop debug visualizer | 3–4 wks |
-| **2. Playable table** | 3D table + balls rendered, touch aiming/power/spin, you can pot balls (no rules) | 2–3 wks |
+| **2. Playable table** | 3D table + balls rendered, touch aiming/power/spin, you can pot balls (no rules); **source/produce art & audio assets** (table, cue, balls, ball-clack sounds — CC0 packs or a few days of Blender) | 2–3 wks |
 | **3. Rules** | Full blackball state machine, two-player pass-and-play is a complete legal game | 2 wks |
 | **4. AI** | Simulation-based AI with difficulty levels | 2–3 wks |
 | **5. Polish** | Audio, menus, settings, stats, aiming-aid options, physics tuning pass, juice (ball trails, pocket animations) | 3 wks |
@@ -192,6 +209,10 @@ payoff of the architecture in §3.
 ~3–4 months part-time for a competent solo dev. Physics (phase 1) is the highest-risk
 item, which is why it comes first and stands alone — if the sim feels good in the debug
 visualizer, everything downstream is derisked.
+
+Physics **tuning is a standing activity from phase 2 onward**, not just the phase 5
+line item — feel is the whole product, so every playable build gets compared against
+real UK pool footage.
 
 ### Suggested repo layout
 ```
@@ -225,6 +246,30 @@ pool-game/
   with remove-ads IAP) after there's a fun game.
 - v2 candidates: online multiplayer (adds server + matchmaking — significant),
   EPA World Rules toggle, tournaments, replays sharing.
+- Note for v2 online play: v1 only needs per-device determinism, but lockstep online
+  play would need cross-device float determinism (ARM vs x86, JIT differences) — likely
+  fixed-point math or server-authoritative simulation. Flagging now so v1 code doesn't
+  accidentally bake in assumptions.
+
+---
+
+## 11. Reference projects (inspiration, not code to copy)
+
+Pool Break 3D itself is closed-source; these open-source projects are the best study
+material. **License caution**: several are GPL — read for understanding, but reimplement
+from the published equations rather than copying code into our codebase.
+
+| Project | What it's useful for |
+|---|---|
+| [pooltool](https://github.com/ekiefl/pooltool) (Python) | The gold standard for realistic physics + event-based simulation. Author's [blog series](https://ekiefl.github.io/2021/03/25/pooltool-start/) derives all the equations from the literature — effectively our physics spec. |
+| [tailuge/billiards](https://github.com/tailuge/billiards) (TypeScript) | Browser 3D billiards with spin and cushion modeling; compact codebase, easy to read; includes snooker (UK-style cushions/pockets are closer to our target than US pool). |
+| [FooBillard++](https://github.com/alrusdi/foobillardplus) (C, GPL) | Complete classic 3D billiards game incl. AI opponent and touch controls; [drodin/billiards](https://github.com/drodin/billiards) is a mobile (Android) port of the same lineage — useful for seeing a full billiards game shipped on Android. |
+| [BreakoutShot](https://github.com/danielKlmr/BreakoutShot), [purgatory-pool](https://github.com/twstewart42/purgatory-pool) (Godot) | Godot-specific patterns: scene setup, camera rigs, touch input. Physics too simple to reuse, structure worth skimming. |
+| [Classic-8-Ball-Pool](https://github.com/henshmi/Classic-8-Ball-Pool) (TypeScript) | Clean example of rules/turn state machine structure for 8-ball (US rules, but the state-machine shape transfers). |
+
+Nobody appears to have shipped an open-source **English pool / blackball** ruleset —
+our rules engine will be original work against the WPA rulebook, which is also a small
+differentiator for the game itself.
 
 ---
 
