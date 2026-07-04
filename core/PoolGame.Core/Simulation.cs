@@ -85,13 +85,12 @@ public sealed class Simulation
 
             foreach (var (wallPos, isX, dir) in Walls(b))
             {
+                // Pocket capture extends further into the table than the cushion
+                // line, so a true pot is captured before its cushion event fires;
+                // anything else must reflect — a skip here lets balls escape.
                 double? hit = WallHitTime(b, segs[b.Id].Acceleration, wallPos, isX, dir, best);
                 if (hit is { } tw && tw < best)
                 {
-                    // Inside a pocket mouth the cushion doesn't exist; capture handles it.
-                    Vec2 posAt = PositionAt(b, segs[b.Id].Acceleration, tw);
-                    if (NearestPocketDistance(posAt) < CushionPocketMouth(posAt))
-                        continue;
                     best = tw;
                     bestEvent = new SimEvent(now + tw, SimEventType.CushionHit, b.Id, isX ? 0 : 1)
                         { ImpactSpeed = Math.Abs(isX ? VelocityAt(b, segs[b.Id].Acceleration, tw).X : VelocityAt(b, segs[b.Id].Acceleration, tw).Y) };
@@ -196,18 +195,6 @@ public sealed class Simulation
         yield return (-hy, false, -1);
         yield return (hy, false, 1);
     }
-
-    private double NearestPocketDistance(Vec2 p) =>
-        _pockets.Min(pk => (p - pk.Center).Length);
-
-    private double CushionPocketMouth(Vec2 p)
-    {
-        Pocket nearest = _pockets.OrderBy(pk => (p - pk.Center).Length).First();
-        return nearest.CaptureRadius * 1.4; // mouth is wider than the capture zone
-    }
-
-    private static Vec2 PositionAt(Ball b, Vec2 acc, double t) =>
-        b.Position + b.Velocity * t + 0.5 * t * t * acc;
 
     private static Vec2 VelocityAt(Ball b, Vec2 acc, double t) => b.Velocity + acc * t;
 

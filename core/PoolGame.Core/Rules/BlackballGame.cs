@@ -25,6 +25,28 @@ public sealed class BlackballGame
 
     public BlackballGame(PlayerId breaker = PlayerId.One) => CurrentPlayer = breaker;
 
+    /// <summary>Independent copy for what-if judging (AI shot evaluation).</summary>
+    public BlackballGame Clone() => new(CurrentPlayer)
+    {
+        TableOpen = TableOpen,
+        IsBreakShot = IsBreakShot,
+        FreeShot = FreeShot,
+        Rack = Rack,
+        PlayerOneGroup = PlayerOneGroup,
+    };
+
+    /// <summary>Colours the current player may legally strike first
+    /// (ignoring the free-shot suspension, which widens this to everything).</summary>
+    public IReadOnlyList<BallColor> BallOnColours(TableState table)
+    {
+        if (TableOpen)
+            return new[] { BallColor.Red, BallColor.Yellow };
+        BallColor mine = GroupOf(CurrentPlayer)!.Value;
+        return table.Balls.Any(b => b.InPlay && b.Color == mine)
+            ? new[] { mine }
+            : new[] { BallColor.Black };
+    }
+
     /// <summary>Judge the shot the current player just played. `before` is the
     /// table as it stood when they addressed the cue ball.</summary>
     public ShotVerdict ApplyShot(TableState before, ShotResult result)
