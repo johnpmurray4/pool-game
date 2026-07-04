@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoolGame.Core", "PoolGame.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoolGame.Core.Tests", "PoolGame.Core.Tests\PoolGame.Core.Tests.csproj", "{A491775F-9444-42A6-96B3-DAEB0E92A3C4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Visualizer", "..\tools\Visualizer\Visualizer.csproj", "{52CDFC8F-9375-4F2E-B870-D7D26940186A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{A491775F-9444-42A6-96B3-DAEB0E92A3C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A491775F-9444-42A6-96B3-DAEB0E92A3C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A491775F-9444-42A6-96B3-DAEB0E92A3C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52CDFC8F-9375-4F2E-B870-D7D26940186A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52CDFC8F-9375-4F2E-B870-D7D26940186A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52CDFC8F-9375-4F2E-B870-D7D26940186A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52CDFC8F-9375-4F2E-B870-D7D26940186A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

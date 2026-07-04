@@ -22,7 +22,9 @@ public sealed class Simulation
 
     public PhysicsConfig Config => _cfg;
 
-    public ShotResult Run(TableState initial, Shot shot)
+    /// <param name="trace">Optional exact motion recorder (visualizer, replays,
+    /// shot animation). Costs one segment record per ball per event window.</param>
+    public ShotResult Run(TableState initial, Shot shot, ShotTrace? trace = null)
     {
         TableState state = initial.Clone();
         var events = new List<SimEvent>();
@@ -45,7 +47,12 @@ public sealed class Simulation
             (double dt, SimEvent? ev) = FindNextEvent(state, window, t);
 
             foreach (Ball b in state.Balls.Where(b => b.InPlay))
+            {
+                if (trace is not null && b.Moving)
+                    trace.Record(b.Id, t, t + dt, b.Position, b.Velocity,
+                        BallMotion.CurrentSegment(b, _cfg).Acceleration);
                 BallMotion.Advance(b, dt, _cfg);
+            }
             t += dt;
 
             if (ev is { } e)
