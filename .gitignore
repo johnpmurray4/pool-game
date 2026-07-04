@@ -1,0 +1,18 @@
+# .NET
+bin/
+obj/
+*.user
+
+# Godot
+.godot/
+*.translation
+export_presets.cfg
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# Android signing — never commit keys
+*.keystore
+*.jks
